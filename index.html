@@ -3,123 +3,223 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#08060f">
 <title>근무시간 정산 · 선택적 근로시간제</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#FAFAF7; --ink:#191917; --graphite:#6B6B66; --hair:#E2E0D8;
-    --signal:#E2570C; --slate:#2C3A44; --rest:#B9B4A6; --holi:#C24A2A;
-    --weekend:#A9A69B; --panel:#FFFFFF; --shadow:0 1px 2px rgba(0,0,0,.05),0 8px 24px rgba(20,20,18,.04);
+    --bg:#08060f; --ink:#F3EFFF; --graphite:#A99FD0; --hair:rgba(255,255,255,.12);
+    --signal:#FF3D9A; --signal2:#FF8A3D; --slate:#7C5CFF; --rest:#3a2f63; --holi:#FF5C7A;
+    --weekend:#6E6699; --panel:rgba(124,92,255,.05); --glass:rgba(18,12,38,.55);
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 16px 48px rgba(124,92,255,.14);
+    --gs:12px;
+    --rainbow:linear-gradient(90deg,#ff3d7f,#ff9a3d,#ffd23d,#3dd68c,#3da5ff,#9b5cff);
+    --neonglow:0 0 18px rgba(255,61,154,.45);
   }
   *{box-sizing:border-box}
-  html,body{margin:0;background:var(--paper);color:var(--ink);
+  html,body{margin:0;background:var(--bg);color:var(--ink);overflow-x:clip;
     font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
     -webkit-font-smoothing:antialiased;font-feature-settings:"tnum"}
+  /* psychedelic aurora backdrop */
+  body::before{content:"";position:fixed;inset:-25%;z-index:-2;pointer-events:none;
+    background:
+      radial-gradient(38% 34% at 14% 8%, rgba(255,61,154,.30), transparent 62%),
+      radial-gradient(42% 38% at 88% 12%, rgba(61,165,255,.26), transparent 62%),
+      radial-gradient(46% 42% at 78% 88%, rgba(155,92,255,.30), transparent 62%),
+      radial-gradient(42% 40% at 8% 92%, rgba(61,214,140,.24), transparent 62%),
+      radial-gradient(36% 34% at 50% 50%, rgba(255,210,61,.12), transparent 60%);
+    filter:blur(28px);animation:drift 26s ease-in-out infinite alternate}
+  body::after{content:"";position:fixed;inset:-60%;z-index:-3;pointer-events:none;opacity:.10;
+    background:conic-gradient(from 0deg,#ff3d7f,#ff9a3d,#ffd23d,#3dd68c,#3da5ff,#9b5cff,#ff3d7f);
+    animation:spin 60s linear infinite}
+  @keyframes drift{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(0,-3%,0) scale(1.1)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
   .mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
-  .wrap{max-width:880px;margin:0 auto;padding:28px 20px 80px}
-  /* header */
-  header{display:flex;flex-direction:column;gap:6px;margin-bottom:22px}
-  .eyebrow{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.18em;
-    text-transform:uppercase;color:var(--graphite)}
-  h1{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:26px;letter-spacing:-.01em;margin:0;line-height:1.15}
-  .sub{color:var(--graphite);font-size:13px;max-width:60ch}
-  /* controls */
+  .wrap{max-width:880px;margin:0 auto;padding:28px 20px 80px;position:relative}
+  @keyframes hue{to{background-position:200% center}}
+  /* glass surfaces */
   .controls{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;
-    padding:16px;background:var(--panel);border:1px solid var(--hair);border-radius:10px;box-shadow:var(--shadow);margin-bottom:18px}
+    padding:16px;background:var(--glass);border:1px solid var(--hair);border-radius:0;box-shadow:var(--shadow);
+    margin-bottom:18px;backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3)}
   .field{display:flex;flex-direction:column;gap:5px}
   .field label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--graphite);font-weight:600}
-  select,input[type=time]{font-family:"JetBrains Mono",monospace;font-size:15px;padding:7px 9px;
-    border:1px solid var(--hair);border-radius:7px;background:var(--paper);color:var(--ink)}
-  select:focus,input:focus,button:focus-visible{outline:2px solid var(--signal);outline-offset:1px}
+  select,input[type=time],input[type=date],input[type=text]{font-family:"JetBrains Mono",monospace;font-size:15px;padding:7px 9px;
+    border:1px solid var(--hair);border-radius:0;background:rgba(255,255,255,.05);color:var(--ink);color-scheme:dark}
+  select:focus,input:focus,button:focus-visible{outline:none;border-color:var(--signal);
+    box-shadow:0 0 0 2px rgba(255,61,154,.35),var(--neonglow)}
   .toggle{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink);cursor:pointer;user-select:none;padding-bottom:6px}
   .toggle input{width:16px;height:16px;accent-color:var(--signal);cursor:pointer}
   .slider-field{min-width:170px}
-  .slider-field .val{font-family:"JetBrains Mono",monospace;color:var(--signal);font-weight:700}
+  .slider-field .val{font-family:"JetBrains Mono",monospace;color:var(--signal);font-weight:700;
+    text-shadow:0 0 10px rgba(255,61,154,.6)}
   input[type=range]{width:100%;accent-color:var(--signal)}
   /* layout grid */
   .grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:18px;align-items:start}
   @media(max-width:680px){.grid2{grid-template-columns:1fr}}
-  .panel{background:var(--panel);border:1px solid var(--hair);border-radius:10px;box-shadow:var(--shadow)}
+  .panel{background:var(--glass);border:1px solid var(--hair);border-radius:0;box-shadow:var(--shadow);
+    backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);
+    position:relative;overflow:hidden}
+  .panel::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--rainbow);opacity:.8}
   .panel-h{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
-    color:var(--graphite);padding:12px 14px 0}
+    color:var(--graphite);padding:14px 14px 0}
   /* calendar */
   .cal{padding:10px 14px 14px}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:8px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:8px}
   .cal-dow{font-size:10px;text-align:center;color:var(--graphite);font-weight:700;padding:2px 0}
-  .cal-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative;
-    font-family:"JetBrains Mono",monospace;font-size:13px;border-radius:6px}
-  .cal-cell.muted{color:#D8D5CC}
-  .cal-cell.we{color:var(--weekend)}
-  .cal-cell.holi{background:#FBEAE3;color:var(--holi);font-weight:700}
+  .cal-cell{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;
+    font-family:"JetBrains Mono",monospace;font-size:13px;border-radius:0;line-height:1.05;
+    background:rgba(255,255,255,.04);transition:transform .1s,box-shadow .1s}
+  .cal-cell:hover{transform:scale(1.1);z-index:2;box-shadow:0 0 14px rgba(124,92,255,.5)}
+  .cal-cell .cd{font-weight:600}
+  .cal-cell .ch{font-size:8.5px;font-weight:700;opacity:.9;letter-spacing:-.03em}
+  .cal-cell.muted{background:transparent;color:transparent}
+  .cal-cell.we{background:rgba(255,255,255,.03);color:var(--weekend)}
+  .cal-cell.off{background:rgba(255,255,255,.03);color:var(--graphite)}
+  /* work-hour heatmap (neon green ramp) */
+  .cal-cell.h1{background:rgba(61,214,140,.16);color:#bdf5d5}
+  .cal-cell.h2{background:rgba(61,214,140,.34);color:#dffff0}
+  .cal-cell.h3{background:rgba(47,214,115,.62);color:#03200f}
+  .cal-cell.h4{background:#27d36f;color:#03200f;box-shadow:0 0 8px rgba(39,211,111,.5)}
+  .cal-cell.h5{background:#16e06a;color:#021a0c;box-shadow:0 0 14px rgba(22,224,106,.75)}
+  .cal-cell.holi{background:rgba(255,92,122,.26);color:#ff9bb0;font-weight:700;
+    box-shadow:inset 0 0 0 1px rgba(255,92,122,.5)}
   .cal-cell.sun{color:var(--holi)}
-  .cal-cell.third{box-shadow:inset 0 0 0 2px var(--signal);color:var(--signal);font-weight:700}
-  .cal-cell.third.off{background:var(--signal);color:#fff}
+  .cal-cell.third{box-shadow:inset 0 0 0 2px var(--signal),0 0 10px rgba(255,61,154,.4)}
+  .cal-cell.third .cd{color:var(--signal);font-weight:700}
+  .cal-cell.third.taken{background:var(--signal);color:#fff;box-shadow:0 0 16px rgba(255,61,154,.7)}
+  .cal-cell.third.taken .cd{color:#fff}
+  .heat-legend{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--graphite);margin-top:10px;flex-wrap:wrap}
+  .heat-legend .scale{display:flex;gap:2px}
+  .heat-legend .scale i{width:12px;height:12px;border-radius:0;display:inline-block}
+  .heat-legend .tag{display:inline-flex;align-items:center;gap:4px;margin-left:2px}
+  .heat-legend .tag i{width:12px;height:12px;border-radius:0;display:inline-block}
+  /* year grass (GitHub-style, neon) */
+  .year{padding:6px 14px 16px}
+  .grass-wrap{overflow-x:auto;padding-bottom:6px}
+  .grass-labels{display:grid;gap:2px;font-size:9px;color:var(--graphite);margin:2px 0 3px;min-width:max-content;
+    font-family:"JetBrains Mono",monospace}
+  .grass-labels span{grid-row:1}
+  .grass{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,var(--gs));grid-auto-columns:var(--gs);
+    gap:2px;min-width:max-content}
+  .gx{width:var(--gs);height:var(--gs);border-radius:0;background:rgba(255,255,255,.05)}
+  .gx.gwe,.gx.goff{background:rgba(255,255,255,.035)}
+  .gx.g1{background:rgba(61,214,140,.2)}.gx.g2{background:rgba(61,214,140,.42)}
+  .gx.g3{background:rgba(47,214,115,.68)}.gx.g4{background:#27d36f}
+  .gx.g5{background:#16e06a;box-shadow:0 0 8px rgba(22,224,106,.7)}
+  .gx.gh{background:#ff5c7a;box-shadow:0 0 6px rgba(255,92,122,.6)}.gx.gh.we{background:rgba(255,92,122,.4);box-shadow:none}
+  .gx.gthird{box-shadow:inset 0 0 0 1.5px var(--signal),0 0 7px rgba(255,61,154,.6)}
+  .gx.gtoday{outline:2px solid #fff;outline-offset:1px}
+  .gx.pad{background:transparent}
+  .year-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 14px;padding:0 14px 4px}
+  @media(max-width:520px){.year-sum{grid-template-columns:repeat(2,1fr)}}
   /* stats */
   .stats{padding:12px 14px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
   .stat{display:flex;flex-direction:column;gap:1px}
   .stat .k{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--graphite);font-weight:600}
   .stat .v{font-family:"JetBrains Mono",monospace;font-size:20px;font-weight:500;letter-spacing:-.01em}
   .stat .v small{font-size:12px;color:var(--graphite);font-weight:400}
-  .stat.hero .v{color:var(--signal);font-weight:700;font-size:22px}
+  .stat.hero .v{font-weight:700;font-size:22px;background:var(--rainbow);-webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;color:transparent;filter:drop-shadow(0 0 10px rgba(255,61,154,.4))}
+  .stat.hero .v small{-webkit-text-fill-color:var(--graphite)}
+  /* recommended leave time */
+  .reco{margin:4px 14px 14px;padding:14px 16px;border-radius:0;
+    background:linear-gradient(135deg,rgba(255,61,154,.14),rgba(155,92,255,.12));
+    border:1px solid rgba(255,61,154,.35);box-shadow:0 0 22px rgba(255,61,154,.18) inset}
+  .reco .rk{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--graphite);font-weight:700;
+    display:flex;align-items:center;gap:6px}
+  .reco .rk .badge{font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.06em;color:#fff;
+    background:var(--signal);padding:2px 6px;border-radius:0}
+  .reco .rv{font-family:"JetBrains Mono",monospace;font-size:28px;font-weight:700;color:var(--signal);
+    letter-spacing:-.01em;margin-top:6px;line-height:1.1;text-shadow:0 0 18px rgba(255,61,154,.6)}
+  .reco .rv small{font-size:13px;color:var(--ink);font-weight:500;text-shadow:none}
+  .reco .rsplit{display:flex;flex-direction:column;gap:3px}
+  .reco .rsplit .ln{font-family:"JetBrains Mono",monospace;font-size:15px;color:var(--ink);font-weight:500}
+  .reco .rsplit .ln b{color:var(--signal);font-weight:700;font-size:18px;text-shadow:0 0 12px rgba(255,61,154,.55)}
+  .reco .rnote{font-size:11.5px;color:var(--graphite);margin-top:6px;line-height:1.45}
   /* strategies */
   .strats{margin-top:18px;display:flex;flex-direction:column;gap:14px}
-  .strat{background:var(--panel);border:1px solid var(--hair);border-radius:10px;box-shadow:var(--shadow);
-    padding:14px 16px;position:relative}
-  .strat.best{border-color:var(--signal)}
+  .strat{background:var(--glass);border:1px solid var(--hair);border-radius:0;box-shadow:var(--shadow);
+    padding:14px 16px;position:relative;overflow:hidden;
+    backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3)}
+  .strat.best{border-color:rgba(255,61,154,.55);box-shadow:var(--shadow),0 0 26px rgba(255,61,154,.22)}
+  .strat.best::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--rainbow)}
   .strat-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
   .strat-name{font-family:"Space Grotesk",sans-serif;font-weight:600;font-size:16px}
   .badge{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
-    color:#fff;background:var(--signal);padding:3px 7px;border-radius:5px}
-  .badge.ghost{color:var(--graphite);background:transparent;border:1px solid var(--hair)}
+    color:#fff;background:linear-gradient(90deg,var(--signal),var(--signal2));padding:3px 8px;border-radius:0;
+    box-shadow:0 0 12px rgba(255,61,154,.5)}
+  .badge.ghost{color:var(--graphite);background:transparent;border:1px solid var(--hair);box-shadow:none}
   .strat-desc{font-size:12.5px;color:var(--graphite);margin:3px 0 12px}
   .leave{font-family:"JetBrains Mono",monospace}
-  .leave b{font-size:20px;color:var(--signal);font-weight:700}
+  .leave b{font-size:20px;color:var(--signal);font-weight:700;text-shadow:0 0 12px rgba(255,61,154,.5)}
   /* timeline bar (signature) */
   .tl{margin:10px 0 4px}
   .tl-row{display:flex;align-items:center;gap:10px;margin:7px 0}
   .tl-lab{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--graphite);width:72px;flex:none}
-  .tl-track{position:relative;height:22px;flex:1;background:#F1EFE8;border-radius:4px;overflow:visible}
-  .tl-work{position:absolute;top:0;height:100%;background:var(--slate);border-radius:4px 0 0 4px}
-  .tl-rest{position:absolute;top:0;height:100%;border-radius:0 4px 4px 0;
-    background:repeating-linear-gradient(45deg,var(--rest),var(--rest) 3px,#cfcabb 3px,#cfcabb 6px)}
-  .tl-cliff{position:absolute;top:-4px;height:30px;width:2px;background:var(--signal);z-index:3}
+  .tl-track{position:relative;height:22px;flex:1;background:rgba(255,255,255,.06);border-radius:0;overflow:visible}
+  .tl-work{position:absolute;top:0;height:100%;border-radius:0;
+    background:linear-gradient(90deg,var(--slate),var(--signal));box-shadow:0 0 12px rgba(124,92,255,.5)}
+  .tl-rest{position:absolute;top:0;height:100%;border-radius:0;
+    background:repeating-linear-gradient(45deg,var(--rest),var(--rest) 3px,rgba(255,255,255,.12) 3px,rgba(255,255,255,.12) 6px)}
+  .tl-cliff{position:absolute;top:-4px;height:30px;width:2px;background:var(--signal2);z-index:3;
+    box-shadow:0 0 8px rgba(255,138,61,.8)}
   .tl-cliff::after{content:"8h";position:absolute;top:-13px;left:50%;transform:translateX(-50%);
-    font-family:"JetBrains Mono",monospace;font-size:9px;color:var(--signal);white-space:nowrap}
+    font-family:"JetBrains Mono",monospace;font-size:9px;color:var(--signal2);white-space:nowrap}
   .tl-end{position:absolute;top:50%;transform:translateY(-50%);font-family:"JetBrains Mono",monospace;
     font-size:10px;color:var(--ink);padding-left:5px}
   .tl-meta{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--graphite);margin-top:4px}
   .legend{display:flex;gap:14px;font-size:10px;color:var(--graphite);margin-top:8px;flex-wrap:wrap}
-  .legend i{display:inline-block;width:11px;height:11px;border-radius:2px;vertical-align:-1px;margin-right:4px}
-  .verdict{margin-top:16px;padding:13px 15px;border-radius:9px;background:#FBF1E9;border:1px solid #F2D8C5;
-    font-size:13.5px;line-height:1.5}
-  .verdict b{color:var(--signal)}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:0;vertical-align:-1px;margin-right:4px}
+  .verdict{margin-top:16px;padding:14px 16px;border-radius:0;
+    background:linear-gradient(135deg,rgba(61,165,255,.12),rgba(155,92,255,.12));
+    border:1px solid rgba(155,92,255,.35);font-size:13.5px;line-height:1.5;
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .verdict b{color:var(--signal);text-shadow:0 0 10px rgba(255,61,154,.4)}
   /* holidays editor */
   .holed{padding:0 14px 14px}
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
-  .chip{font-family:"JetBrains Mono",monospace;font-size:11px;background:#FBEAE3;color:var(--holi);
-    padding:3px 6px;border-radius:5px;display:inline-flex;align-items:center;gap:5px}
-  .chip.we{background:#F1EFE8;color:var(--weekend)}
+  .chip{font-family:"JetBrains Mono",monospace;font-size:11px;background:rgba(255,92,122,.18);color:#ff9bb0;
+    padding:3px 6px;border-radius:0;display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(255,92,122,.3)}
+  .chip.we{background:rgba(255,255,255,.05);color:var(--weekend);border-color:var(--hair)}
   .chip button{border:0;background:none;color:inherit;cursor:pointer;font-size:13px;line-height:1;padding:0}
   .addrow{display:flex;gap:6px;align-items:center;margin-top:4px}
   .addrow input{font-size:13px}
-  .addrow button,.note button{font-family:inherit;font-size:12px;border:1px solid var(--hair);background:var(--paper);
-    border-radius:6px;padding:6px 10px;cursor:pointer}
+  .addrow button,.note button{font-family:inherit;font-size:12px;border:1px solid var(--hair);
+    background:rgba(255,255,255,.06);color:var(--ink);border-radius:0;padding:6px 10px;cursor:pointer;transition:.12s}
+  .addrow button:hover,.note button:hover{border-color:var(--signal);box-shadow:var(--neonglow)}
   .note{font-size:11.5px;color:var(--graphite);margin-top:8px;line-height:1.5}
   .src{font-size:11px;color:var(--graphite);margin-top:24px;text-align:center}
-  .src code{font-family:"JetBrains Mono",monospace;background:#F1EFE8;padding:1px 4px;border-radius:3px}
-  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  .src code{font-family:"JetBrains Mono",monospace;background:rgba(255,255,255,.08);padding:1px 4px;border-radius:0}
+  /* ===== omfgdogs homage: the early bird leads the pack ===== */
+  .runner{position:relative;border-radius:0}
+  .runner.top{margin:14px 0 20px}
+  .runner .track{height:80px;border-radius:0;overflow:hidden;position:relative;
+    border:1px solid var(--hair);box-shadow:var(--shadow),0 0 30px rgba(255,61,154,.18);
+    background:url("omfgdogs.gif") repeat-x;background-size:auto 100%;image-rendering:pixelated}
+  .runner .track::after{content:"";position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(90deg,rgba(8,6,15,.55),transparent 12% 80%,rgba(8,6,15,.35))}
+  @media (min-resolution:2dppx){.runner .track{background-image:url("omfgdogs@2X.gif")}}
+  .leadbird{position:absolute;z-index:3;right:-50px;bottom:-27px;height:120px;width:auto;pointer-events:none;
+    filter:drop-shadow(0 5px 9px rgba(0,0,0,.55)) drop-shadow(0 0 16px rgba(255,255,255,.35));
+    animation:runbob .34s ease-in-out infinite}
+  @keyframes runbob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-9px) rotate(4deg)}}
+  @media(max-width:480px){.leadbird{height:88px;right:-18px;bottom:-16px}.runner .track{height:64px}}
+  /* chiptune BGM toggle */
+  .bgm{position:fixed;right:16px;bottom:16px;z-index:50;font-family:"JetBrains Mono",monospace;font-size:12px;
+    font-weight:700;letter-spacing:.04em;color:#fff;cursor:pointer;border:1px solid rgba(255,255,255,.25);
+    padding:9px 13px;border-radius:0;background:linear-gradient(90deg,var(--signal),var(--signal2));
+    box-shadow:0 0 18px rgba(255,61,154,.5);transition:.15s}
+  .bgm:hover{transform:translateY(-2px) scale(1.04)}
+  .bgm.on{background:var(--rainbow);background-size:200% auto;animation:hue 4s linear infinite,pulse 1.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 14px rgba(255,61,154,.5)}50%{box-shadow:0 0 30px rgba(155,92,255,.8)}}
+  @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <div class="eyebrow">선택적 근로시간제 · 월 단위 정산</div>
-    <h1>이번 달, 몇 시에 나가면 되나</h1>
-    <div class="sub">월 기준근로시간을 채우는 두 전략 — 매일 같은 시각에 퇴근하는 <b>균등배분</b>과,
-      대부분 일찍 끝내고 며칠만 몰아치는 <b>8시간 절벽 회피</b> — 을 그 달 공휴일에 맞춰 계산합니다.</div>
-  </header>
+  <div class="runner top"><div class="track"></div><img class="leadbird" src="bird.png" alt="Super Early Bird"></div>
 
   <div class="controls">
     <div class="field"><label for="year">연도</label><select id="year"></select></div>
@@ -134,13 +234,21 @@
   <div class="grid2">
     <section class="panel">
       <div class="panel-h" id="calTitle">2026 · 7월</div>
-      <div class="cal"><div class="cal-grid" id="calDow"></div><div class="cal-grid" id="calGrid"></div></div>
+      <div class="cal"><div class="cal-grid" id="calDow"></div><div class="cal-grid" id="calGrid"></div>
+        <div class="heat-legend">
+          <span>근무 적게</span>
+          <span class="scale"><i style="background:rgba(61,214,140,.16)"></i><i style="background:rgba(61,214,140,.34)"></i><i style="background:rgba(47,214,115,.62)"></i><i style="background:#27d36f"></i><i style="background:#16e06a"></i></span>
+          <span>많이</span>
+          <span class="tag"><i style="background:rgba(255,92,122,.26)"></i>공휴일</span>
+          <span class="tag"><i style="box-shadow:inset 0 0 0 2px var(--signal);background:transparent"></i>셋째금</span>
+        </div>
+      </div>
       <div class="panel-h" style="padding-top:6px">그 달 공휴일</div>
       <div class="holed">
         <div class="chips" id="chips"></div>
         <div class="addrow">
           <input type="date" id="addDate">
-          <input type="text" id="addName" placeholder="명칭(예: 임시공휴일)" style="flex:1;min-width:0;padding:6px 8px;border:1px solid var(--hair);border-radius:6px">
+          <input type="text" id="addName" placeholder="명칭(예: 임시공휴일)" style="flex:1;min-width:0;padding:6px 8px;border:1px solid var(--hair);border-radius:0">
           <button id="addBtn">추가</button>
         </div>
         <div class="note" id="holNote"></div>
@@ -150,8 +258,29 @@
     <section class="panel">
       <div class="panel-h">이 달 기준</div>
       <div class="stats" id="stats"></div>
+      <div class="reco" id="reco"></div>
     </section>
   </div>
+
+  <section class="panel" style="margin-top:18px">
+    <div class="panel-h" id="yearTitle">올해 한눈에</div>
+    <div class="year-sum" id="yearSum"></div>
+    <div class="year">
+      <div class="grass-wrap">
+        <div class="grass-labels" id="grassLabels"></div>
+        <div class="grass" id="grass"></div>
+      </div>
+      <div class="heat-legend">
+        <span>하루 근무 적게</span>
+        <span class="scale"><i style="background:rgba(255,255,255,.05)"></i><i style="background:rgba(61,214,140,.2)"></i><i style="background:rgba(61,214,140,.42)"></i><i style="background:rgba(47,214,115,.68)"></i><i style="background:#27d36f"></i><i style="background:#16e06a"></i></span>
+        <span>많이</span>
+        <span class="tag"><i style="background:#ff5c7a"></i>공휴일</span>
+        <span class="tag"><i style="box-shadow:inset 0 0 0 1.5px var(--signal);background:transparent"></i>셋째금</span>
+        <span class="tag"><i style="outline:2px solid #fff;outline-offset:-2px;background:transparent"></i>오늘</span>
+        <span style="margin-left:auto">색이 진할수록 그 달 하루 근무가 길어요</span>
+      </div>
+    </div>
+  </section>
 
   <div class="strats" id="strats"></div>
   <div class="verdict" id="verdict"></div>
@@ -161,6 +290,7 @@
     기준 = ⌊역일÷7×40⌋ − 평일공휴일×8h · 최대 = ⌊역일÷7×52⌋ (소수점 버림) · 휴게 = 실근무 4h당 30분 자동
   </div>
 </div>
+<button class="bgm" id="bgm" type="button" title="omfgdogs 칩튠 BGM">♪ omfg</button>
 
 <script>
 //==================== 공휴일 데이터 (폴백 내장; holidays.json이 덮어씀) ====================
@@ -234,6 +364,50 @@ function computeAvoid(S,N,start,Lmax){
     stayMonth:(N-x)*(SHORT+rS)+x*(longLen+rL), days:N};
 }
 
+// 근무시간 → 히트맵 단계(1~5). 근무 없는 날=0
+function workLevel(W){
+  if(!(W>0))return 0;
+  if(W<6)return 1; if(W<7)return 2; if(W<8)return 3; if(W<9.5)return 4; return 5;
+}
+
+// 한 달 전체 계획: 기준/최대/소정, 전략, 그리고 각 근무일의 근무시간(dayW) 산출
+function planMonth(y,m,start,Lmax){
+  const nDays=new Date(y,m,0).getDate();
+  const hols=holidaysOf(y,m);
+  const holSet=new Set(hols.map(h=>h.iso));
+  const wdHol=hols.filter(h=>!h.weekend).length;
+  const wd=weekdayCount(y,m);
+  const tf=thirdFriday(y,m), tfIso=iso(y,m,tf.getDate());
+  const takeThird=document.getElementById("thirdoff").checked;
+  const thirdIsWorkday=tf.getDay()>=1&&tf.getDay()<=5&&!holSet.has(tfIso);
+  const soj=wd-wdHol-(takeThird&&thirdIsWorkday?1:0);
+  const base=Math.floor(nDays/7*40)-wdHol*8;
+  const max =Math.floor(nDays/7*52);
+  // 그 달 근무일(평일·비공휴일·셋째금 미출근 제외) 순서대로
+  const workdays=[];
+  for(let d=1;d<=nDays;d++){
+    const w=new Date(y,m-1,d).getDay(), id=iso(y,m,d);
+    if(w>=1&&w<=5&&!holSet.has(id)&&!(takeThird&&id===tfIso&&thirdIsWorkday))workdays.push(id);
+  }
+  const N=workdays.length;
+  const even=computeEven(base,soj,start);
+  const avoid=computeAvoid(base,soj,start,Lmax);
+  const avoidWorth=avoid.type==="avoid"&&avoid.stayMonth<even.stayMonth-1e-6;
+  const dayW={};
+  if(N>0){
+    if(avoidWorth){
+      const x=Math.min(avoid.longN,N), longIdx=new Set();
+      if(x>=N)workdays.forEach((_,i)=>longIdx.add(i));
+      else if(x===1)longIdx.add(Math.floor((N-1)/2));
+      else for(let i=0;i<x;i++)longIdx.add(Math.round(i*(N-1)/(x-1)));
+      workdays.forEach((id,i)=>dayW[id]=longIdx.has(i)?avoid.longW:avoid.shortW);
+    }else{
+      workdays.forEach(id=>dayW[id]=even.W);
+    }
+  }
+  return {nDays,hols,holSet,wdHol,wd,soj,base,max,tfIso,thirdIsWorkday,takeThird,even,avoid,avoidWorth,dayW};
+}
+
 //==================== 렌더 ====================
 const DOW=["일","월","화","수","목","금","토"];
 function render(){
@@ -242,29 +416,24 @@ function render(){
   document.getElementById("lmaxv").textContent=Lmax.toFixed(1)+"h";
   calTitle.textContent=`${y} · ${m}월`;
 
-  const nDays=new Date(y,m,0).getDate();
-  const hols=holidaysOf(y,m);
-  const holSet=new Set(hols.map(h=>h.iso));
-  const wdHol=hols.filter(h=>!h.weekend).length;   // 평일 공휴일
-  const wd=weekdayCount(y,m);
-  const tf=thirdFriday(y,m);
-  const tfIso=iso(y,m,tf.getDate());
-  const takeThird=document.getElementById("thirdoff").checked;
-  const thirdIsWorkday = tf.getDay()>=1&&tf.getDay()<=5 && !holSet.has(tfIso);
-  const soj = wd - wdHol - (takeThird&&thirdIsWorkday?1:0);   // 소정근무일
-  const base = Math.floor(nDays/7*40) - wdHol*8;             // 월 기준 (역일÷7×40 소수점 버림 후 공휴일 차감)
-  const max  = Math.floor(nDays/7*52);                       // 월 최대 (소수점 버림)
+  const P=planMonth(y,m,start,Lmax);
+  const {nDays,hols,holSet,wdHol,wd,soj,base,max,tfIso,thirdIsWorkday,takeThird,dayW}=P;
+  const hName={}; hols.forEach(h=>hName[h.iso]=h.name);
 
-  // calendar
+  // calendar (근무시간 히트맵)
   calDow.innerHTML=DOW.map((d,i)=>`<div class="cal-dow" style="color:${i===0?'var(--holi)':i===6?'var(--weekend)':'var(--graphite)'}">${d}</div>`).join("");
   let cells=""; const lead=new Date(y,m-1,1).getDay();
   for(let i=0;i<lead;i++)cells+=`<div class="cal-cell muted"></div>`;
   for(let d=1;d<=nDays;d++){
-    const dt=new Date(y,m-1,d), w=dt.getDay(), id=iso(y,m,d);
-    let cls="cal-cell";
-    if(holSet.has(id))cls+=" holi"; else if(w===0)cls+=" sun"; else if(w===6)cls+=" we";
-    if(id===tfIso)cls+=" third"+(takeThird?" off":"");
-    cells+=`<div class="${cls}">${d}</div>`;
+    const w=new Date(y,m-1,d).getDay(), id=iso(y,m,d);
+    let cls="cal-cell", sub="", title=id;
+    if(holSet.has(id)){cls+=" holi"; title=`${id} · ${hName[id]||"공휴일"}`;}
+    else if(dayW[id]!=null){cls+=" h"+workLevel(dayW[id]); sub=`<span class="ch">${dayW[id].toFixed(1)}</span>`; title=`${id} · 근무 ${dur(dayW[id])}`;}
+    else if(w===0)cls+=" sun";
+    else if(w===6)cls+=" we";
+    else {cls+=" off"; title=`${id} · 비근무일`;}
+    if(id===tfIso){cls+=" third"+(takeThird?" taken":""); if(takeThird)title=`${id} · 셋째 주 금요일 미출근`;}
+    cells+=`<div class="${cls}" title="${title}"><span class="cd">${d}</span>${sub}</div>`;
   }
   calGrid.innerHTML=cells;
 
@@ -287,9 +456,21 @@ function render(){
   `;
 
   // strategies
-  const even=computeEven(base,soj,start);
-  const avoid=computeAvoid(base,soj,start,Lmax);
-  const avoidWorth = avoid.type==="avoid" && avoid.stayMonth < even.stayMonth-1e-6;
+  const {even,avoid,avoidWorth}=P;
+
+  // 추천 퇴근시간 (이 달 기준 칸 아래)
+  if(avoidWorth){
+    reco.innerHTML=`<div class="rk">추천 퇴근시간 <span class="badge">절벽 회피</span></div>
+      <div class="rsplit">
+        <div class="ln"><b>${hm(avoid.shortOut)}</b> 퇴근 · ${avoid.shortN}일</div>
+        <div class="ln"><b>${hm(avoid.longOut)}</b> 퇴근 · ${avoid.longN}일 몰아치기</div>
+      </div>
+      <div class="rnote">대부분 일찍 가고 며칠만 길게 — 절벽 회피가 월 체류시간이 더 짧아요.</div>`;
+  }else{
+    reco.innerHTML=`<div class="rk">추천 퇴근시간 <span class="badge">균등배분</span></div>
+      <div class="rv">${hm(even.out)} <small>매일</small></div>
+      <div class="rnote">소정근무일 ${even.days}일 모두 같은 시각에 퇴근하면 월 기준근로를 정확히 채워요.</div>`;
+  }
 
   strats.innerHTML="";
   strats.appendChild(stratEven(even,start,!avoidWorth));
@@ -307,6 +488,54 @@ function render(){
   } else {
     verdict.innerHTML=`균등배분과 절벽 회피의 월 체류시간이 거의 같아요. <b>매일 일정한 균등배분</b>이 단순해서 무난합니다.`;
   }
+
+  renderYear(y,start,Lmax);
+}
+
+// GitHub 잔디 스타일 연간 개요
+function renderYear(y,start,Lmax){
+  document.getElementById("yearTitle").textContent=`${y} · 올해 한눈에`;
+  let baseSum=0,maxSum=0,sojSum=0,wdHolSum=0;
+  const info={};   // iso → {W} | {holiday,weekend,name}
+  const third={};  // iso → {taken} (셋째 주 금요일, 평일·비공휴일인 달만)
+  for(let m=1;m<=12;m++){
+    const p=planMonth(y,m,start,Lmax);
+    baseSum+=p.base; maxSum+=p.max; sojSum+=p.soj; wdHolSum+=p.wdHol;
+    p.hols.forEach(h=>info[h.iso]={holiday:true,weekend:h.weekend,name:h.name});
+    Object.entries(p.dayW).forEach(([id,W])=>{ if(!info[id])info[id]={W}; });
+    if(p.thirdIsWorkday)third[p.tfIso]={taken:p.takeThird};
+  }
+  const jan1=new Date(y,0,1), jDow=jan1.getDay();
+  const daysInYear=Math.round((new Date(y,11,31)-jan1)/86400000)+1;
+  const totalCols=Math.ceil((daysInYear+jDow)/7);
+  const now=new Date(), todayIso=iso(now.getFullYear(),now.getMonth()+1,now.getDate());
+  let cells="";
+  for(let i=0;i<jDow;i++)cells+=`<div class="gx pad"></div>`;
+  for(let di=0;di<daysInYear;di++){
+    const dt=new Date(y,0,1+di), w=dt.getDay(), id=iso(y,dt.getMonth()+1,dt.getDate());
+    const it=info[id]; let cls="gx", t=id;
+    if(it&&it.holiday){cls+=" gh"+(it.weekend?" we":""); t=`${id} · ${it.name}`;}
+    else if(it&&it.W!=null){cls+=" g"+workLevel(it.W); t=`${id} · 근무 ${dur(it.W)}`;}
+    else if(w===0||w===6){cls+=" gwe";}
+    else {cls+=" goff"; t=`${id} · 비근무일`;}
+    if(third[id]){cls+=" gthird"; t=`${id} · 셋째 주 금요일${third[id].taken?"(미출근 선택)":""}`;}
+    if(id===todayIso)cls+=" gtoday";
+    cells+=`<div class="${cls}" title="${t}"></div>`;
+  }
+  const grass=document.getElementById("grass");
+  grass.innerHTML=cells;
+  // 월 라벨 (각 달 시작 칸의 열에 맞춰 배치)
+  let labs="";
+  for(let m=0;m<12;m++){
+    const di=Math.round((new Date(y,m,1)-jan1)/86400000);
+    const col=Math.floor((di+jDow)/7);
+    labs+=`<span style="grid-column:${col+1}">${m+1}월</span>`;
+  }
+  const gl=document.getElementById("grassLabels");
+  gl.innerHTML=labs; gl.style.gridTemplateColumns=`repeat(${totalCols},var(--gs))`;
+  document.getElementById("yearSum").innerHTML=
+    stat("연 기준근로",dur(baseSum),"",true)+stat("연 최대근로",dur(maxSum),"")+
+    stat("연 소정근무일",sojSum,"일")+stat("연 평일공휴일",wdHolSum,"일");
 }
 function stat(k,v,unit,hero){return `<div class="stat${hero?' hero':''}"><div class="k">${k}</div><div class="v mono">${v}${unit?` <small>${unit}</small>`:""}</div></div>`;}
 
@@ -323,9 +552,9 @@ function bar(label,W,r,start){
     <div class="tl-meta">근무 ${dur(W)} + 휴게 ${dur(r)} = 체류 ${dur(total)} · 출근 ${hm(start)} → 퇴근 ${hm(start+total)}</div>`;
 }
 function legend(){return `<div class="legend">
-  <span><i style="background:var(--slate)"></i>근무</span>
-  <span><i style="background:repeating-linear-gradient(45deg,var(--rest),var(--rest) 2px,#cfcabb 2px,#cfcabb 4px)"></i>자동 휴게</span>
-  <span><i style="background:var(--signal);width:2px;border-radius:0"></i>8시간 절벽</span></div>`;}
+  <span><i style="background:linear-gradient(90deg,var(--slate),var(--signal))"></i>근무</span>
+  <span><i style="background:repeating-linear-gradient(45deg,var(--rest),var(--rest) 2px,rgba(255,255,255,.18) 2px,rgba(255,255,255,.18) 4px)"></i>자동 휴게</span>
+  <span><i style="background:var(--signal2);width:2px;border-radius:0"></i>8시간 절벽</span></div>`;}
 
 function stratEven(s,start,best){
   const el=document.createElement("div"); el.className="strat"+(best?" best":"");
@@ -366,6 +595,32 @@ function bind(){
     const yk=d.slice(0,4); (manualAdd[yk]=manualAdd[yk]||[]).push([d,name]); manualDel.delete(d);
     document.getElementById("addName").value=""; render();
   });
+  document.getElementById("bgm").addEventListener("click",toggleBgm);
+}
+// 칩튠 BGM (omfgdogs 오마주) — 클릭으로만 재생, 기본 OFF
+const MELODY=[523.25,659.25,783.99,659.25,587.33,698.46,880.0,698.46,
+              523.25,659.25,783.99,1046.5,987.77,783.99,659.25,587.33];
+const BASS=[130.81,0,196.0,0,146.83,0,174.61,0];
+let actx=null, seq=null, bgmOn=false, stp=0;
+function blip(freq,dur,type,vol){
+  if(!freq)return; const t=actx.currentTime, o=actx.createOscillator(), g=actx.createGain();
+  o.type=type; o.frequency.value=freq; o.connect(g); g.connect(actx.destination);
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(vol,t+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.start(t); o.stop(t+dur+0.02);
+}
+function toggleBgm(){
+  const btn=document.getElementById("bgm");
+  if(bgmOn){ clearInterval(seq); bgmOn=false; btn.textContent="♪ omfg"; btn.classList.remove("on"); return; }
+  try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)(); actx.resume(); }catch(e){ return; }
+  stp=0;
+  seq=setInterval(()=>{
+    blip(MELODY[stp%MELODY.length],0.16,"square",0.07);
+    if(stp%2===0) blip(BASS[(stp/2)%BASS.length],0.22,"triangle",0.10);
+    stp++;
+  },140);
+  bgmOn=true; btn.textContent="⏸ omfg"; btn.classList.add("on");
 }
 async function loadHolidays(){
   try{
