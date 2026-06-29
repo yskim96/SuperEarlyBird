@@ -227,6 +227,7 @@
     <div class="field"><label for="start">출근</label><input type="time" id="start" value="07:30" step="60"></div>
     <label class="toggle"><input type="checkbox" id="labor" checked> 근로자의날(5/1) 휴일</label>
     <label class="toggle"><input type="checkbox" id="thirdoff"> 셋째 주 금요일 미출근</label>
+    <label class="toggle"><input type="checkbox" id="legal8h" checked title="근로기준법 54조: 8h 근무 시 휴게 1시간 강제"> 8h 근무 휴게 1시간(법정)</label>
     <div class="field slider-field"><label for="lmax">몰아치는 날 최대 근무 <span class="val" id="lmaxv">10.0h</span></label>
       <input type="range" id="lmax" min="8.5" max="12" step="0.5" value="10"></div>
   </div>
@@ -287,7 +288,7 @@
 
   <div class="src">
     공휴일 출처: <code>holidays.json</code> (한국천문연구원 특일정보 API · GitHub Actions 갱신) · 내장 폴백: 2026–2027 검증치<br>
-    기준 = ⌊역일÷7×40⌋ − 평일공휴일×8h · 최대 = ⌊역일÷7×52⌋ (소수점 버림) · 휴게 = 실근무 4h당 30분 자동
+    기준 = ⌊역일÷7×40⌋ − 평일공휴일×8h · 최대 = ⌊역일÷7×52⌋ (소수점 버림) · 휴게 = 4h 블록당 최대 30분 흡수(8h 정각=법정 60분, 토글)
   </div>
 </div>
 <button class="bgm" id="bgm" type="button" title="omfgdogs 칩튠 BGM">♪ omfg</button>
@@ -316,7 +317,16 @@ const manualDel = new Set(); // iso strings removed
 const pad=n=>String(n).padStart(2,"0");
 const iso=(y,m,d)=>`${y}-${pad(m)}-${pad(d)}`;
 const isWeekend=dt=>{const w=dt.getDay();return w===0||w===6;};
-function rest(W){return 0.5*Math.floor(W/4 + 1e-9);}      // 휴게(h): 근무 4h당 0.5h
+// 휴게 = "4h(240m) 블록 직후 최대 30m 흡수" 모델. 근무가 4h 경계를 '넘을' 때마다 30m 강제.
+// 정확히 4h/8h/12h '딱'에 멈추면 그 직전 휴게는 미발생(기계적 최소).
+let LEGAL8H = true;   // 근기법 54조: 8h 근무 시 휴게 60분 강제(HR 확정 전 기본 ON). UI 토글로 제어.
+function autoRestMin(workMin){          // 분 단위 입력 → 휴게(분)
+  if(workMin<=0) return 0;
+  let r = Math.floor((workMin-1)/240)*30;
+  if(LEGAL8H && workMin===480) r = 60;  // 8h 정각: 법적 1시간
+  return r;
+}
+function rest(W){ return autoRestMin(Math.round(W*60))/60; }   // 시간(h) 반환(호출부 호환)
 function hm(decimal){const t=Math.round(decimal*60);return `${pad(Math.floor(t/60))}:${pad(t%60)}`;}
 function dur(decimal){const t=Math.round(decimal*60);const h=Math.floor(t/60),m=t%60;return m?`${h}h${pad(m)}m`:`${h}h`;}
 function parseStart(){const [h,m]=document.getElementById("start").value.split(":").map(Number);return h+m/60;}
@@ -411,6 +421,7 @@ function planMonth(y,m,start,Lmax){
 //==================== 렌더 ====================
 const DOW=["일","월","화","수","목","금","토"];
 function render(){
+  LEGAL8H = document.getElementById("legal8h").checked;
   const y=+year.value, m=+month.value, start=parseStart();
   const Lmax=+document.getElementById("lmax").value;
   document.getElementById("lmaxv").textContent=Lmax.toFixed(1)+"h";
@@ -585,7 +596,7 @@ function fillSelects(){
   year.value=def; month.value=(yNow===def)?(new Date().getMonth()+1):7;
 }
 function bind(){
-  ["year","month","start","labor","thirdoff","lmax"].forEach(id=>{
+  ["year","month","start","labor","thirdoff","legal8h","lmax"].forEach(id=>{
     const e=document.getElementById(id); e.addEventListener("input",render); e.addEventListener("change",render);
   });
   chips.addEventListener("click",e=>{const d=e.target.getAttribute("data-del");if(d){manualDel.add(d);render();}});
